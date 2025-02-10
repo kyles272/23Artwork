@@ -30,8 +30,9 @@ public class Player : MonoBehaviour
     void OnLook(InputValue value)
     {
         // Get mouse input for looking
-        xRotation = value.Get<Vector2>().x;
-        yRotation = value.Get<Vector2>().y;
+        Vector2 lookInput = value.Get<Vector2>();
+        xRotation = lookInput.x;
+        yRotation = lookInput.y;
     }
 
     void Start()
@@ -39,12 +40,16 @@ public class Player : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         _camera = GameObject.Find("camera");
         rb = GetComponent<Rigidbody>();
+
+        // Disable Rigidbody rotation so manual rotation doesn't conflict
+        rb.freezeRotation = true;
     }
 
     void Update()
     {
         // Movement
-        transform.Translate(new Vector3(movementInput.x, 0, movementInput.y) * movementSpeed * Time.deltaTime);
+        Vector3 moveDirection = new Vector3(movementInput.x, 0, movementInput.y).normalized;
+        transform.Translate(moveDirection * movementSpeed * Time.deltaTime);
 
         // Horizontal rotation (Player body)
         transform.Rotate(Vector3.up * xRotation * viewSpeed * Time.deltaTime);
@@ -52,7 +57,7 @@ public class Player : MonoBehaviour
         // Vertical rotation (Camera)
         if (!isInverted)
         {
-            currentXRotation -= yRotation * viewSpeed * Time.deltaTime;  // Invert vertical rotation
+            currentXRotation -= yRotation * viewSpeed * Time.deltaTime;  // Inverted vertical rotation
         }
         else
         {
@@ -64,5 +69,8 @@ public class Player : MonoBehaviour
 
         // Apply the clamped vertical rotation to the camera
         _camera.transform.localRotation = Quaternion.Euler(currentXRotation, 0, 0);
+
+        // Debug: Log the rotation values
+        Debug.Log($"xRotation: {xRotation}, yRotation: {yRotation}, currentXRotation: {currentXRotation}");
     }
 }
