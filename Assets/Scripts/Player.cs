@@ -7,8 +7,9 @@ public class Player : MonoBehaviour
     Vector2 movementInput;
 
     [SerializeField] float movementSpeed = 5f;
-    [SerializeField] float viewSpeed = 2f;
     [SerializeField] bool isInverted = false;
+
+    [SerializeField] private float cameraSpeed = 100f; // Speed of camera rotation
 
     GameObject _camera;
     private float xRotation = 0f;
@@ -29,11 +30,22 @@ public class Player : MonoBehaviour
 
     void OnLook(InputValue value)
     {
-        // Get mouse input for looking
         Vector2 lookInput = value.Get<Vector2>();
-        xRotation = lookInput.x;
-        yRotation = lookInput.y;
+
+        if (Gamepad.current != null && Gamepad.current.wasUpdatedThisFrame)
+        {
+            // Analog stick sensitivity multiplier
+            xRotation = lookInput.x * 100f; // Tweak multiplier as needed
+            yRotation = lookInput.y * 100f;
+        }
+        else
+        {
+            // Mouse input (already in delta)
+            xRotation = lookInput.x;
+            yRotation = lookInput.y;
+        }
     }
+
 
     void Start()
     {
@@ -47,21 +59,33 @@ public class Player : MonoBehaviour
 
     void Update()
     {
+        //Check what is in front of the player
+        RaycastHit hit;
+        // Draw a ray for debugging purposes
+        Debug.DrawRay(_camera.transform.position, _camera.transform.forward * 2f, Color.red);
+        if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out hit, 2f))
+        {
+            // If something is hit, log the name of the object
+            Debug.Log("Hit object: " + hit.collider.gameObject.name);
+        }
+    }
+
+    void FixedUpdate()
+    {
         // Movement
         Vector3 moveDirection = new Vector3(movementInput.x, 0, movementInput.y).normalized;
         transform.Translate(moveDirection * movementSpeed * Time.deltaTime);
-
         // Horizontal rotation (Player body)
-        transform.Rotate(Vector3.up * xRotation * viewSpeed * Time.deltaTime);
+        transform.Rotate(Vector3.up * xRotation * Time.deltaTime);
 
         // Vertical rotation (Camera)
         if (!isInverted)
         {
-            currentXRotation -= yRotation * viewSpeed * Time.deltaTime;  // Inverted vertical rotation
+            currentXRotation -= yRotation * Time.deltaTime;  // Inverted vertical rotation
         }
         else
         {
-            currentXRotation += yRotation * viewSpeed * Time.deltaTime;  // Normal vertical rotation
+            currentXRotation += yRotation * Time.deltaTime;  // Normal vertical rotation
         }
 
         // Clamp the vertical rotation to the desired limits
@@ -69,8 +93,5 @@ public class Player : MonoBehaviour
 
         // Apply the clamped vertical rotation to the camera
         _camera.transform.localRotation = Quaternion.Euler(currentXRotation, 0, 0);
-
-        // Debug: Log the rotation values
-        Debug.Log($"xRotation: {xRotation}, yRotation: {yRotation}, currentXRotation: {currentXRotation}");
     }
 }
