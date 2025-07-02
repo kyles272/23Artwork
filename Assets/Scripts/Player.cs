@@ -1,4 +1,5 @@
 using System;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -23,14 +24,22 @@ public class Player : MonoBehaviour
 
     private float currentXRotation = 0f;  // Track current pitch (vertical rotation)
 
-    void OnMove(InputValue value)
+    PlayerInput playerInput;
+
+    RaycastHit hit;
+
+    [SerializeField] private float hitRange = 2f;
+
+    HUD HUD;
+
+    public void OnMove(InputAction.CallbackContext context)
     {
-        movementInput = value.Get<Vector2>();
+        movementInput = context.ReadValue<Vector2>();
     }
 
-    void OnLook(InputValue value)
+    public void OnLook(InputAction.CallbackContext context)
     {
-        Vector2 lookInput = value.Get<Vector2>();
+        Vector2 lookInput = context.ReadValue<Vector2>();
 
         if (Gamepad.current != null && Gamepad.current.wasUpdatedThisFrame)
         {
@@ -46,27 +55,65 @@ public class Player : MonoBehaviour
         }
     }
 
+    public void OnInteract()
+    {
+        Debug.Log("Interact button pressed");
+        if (hit.collider!= null && hit.collider.gameObject.GetComponent<Interactable>() != null)
+        {
+            // Call the Interact method on the Interactable component
+            hit.collider.GetComponent<Interactable>().Interact(this);
+        }
+    }
+
+    public void Awake()
+    {
+        playerInput = GetComponent<PlayerInput>();
+
+        playerInput.actions["Move"].performed += OnMove;
+        playerInput.actions["Move"].canceled += OnMove;
+        playerInput.actions["Look"].performed += OnLook;
+        playerInput.actions["Look"].canceled += OnLook;
+
+        playerInput.actions["Interact"].performed += ctx => OnInteract();
+    }
+
 
     void Start()
     {
+        HUD = transform.Find("HUD").GetComponent<HUD>();
+        if (HUD == null)
+        {
+            Debug.LogError("HUD not found");
+        }
         Cursor.lockState = CursorLockMode.Locked;
         _camera = GameObject.Find("camera");
         rb = GetComponent<Rigidbody>();
 
         // Disable Rigidbody rotation so manual rotation doesn't conflict
         rb.freezeRotation = true;
+
+        // Initialize camera rotation
+        _camera.transform.localRotation = Quaternion.Euler(0, 0, 0);
+
+        hit = new RaycastHit();
     }
 
     void Update()
     {
-        //Check what is in front of the player
-        RaycastHit hit;
         // Draw a ray for debugging purposes
-        Debug.DrawRay(_camera.transform.position, _camera.transform.forward * 2f, Color.red);
-        if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out hit, 2f))
+        Debug.DrawRay(_camera.transform.position, _camera.transform.forward * hitRange, Color.red);
+        if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out hit, hitRange))
         {
-            // If something is hit, log the name of the object
-            Debug.Log("Hit object: " + hit.collider.gameObject.name);
+            //Check if the object has an Interactable component, show UI prompt to tell the player they can interact.
+            if (hit.collider.gameObject.TryGetComponent(out Interactable interactable))
+            {
+                HUD.ShowInteractPrompt(true);
+                //Debug.Log("Press 'E' to interact");
+            }
+        }
+        else
+        {
+            HUD.ShowInteractPrompt(false);
         }
     }
 
