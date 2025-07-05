@@ -84,7 +84,7 @@ public class Player : MonoBehaviour
 
     void Start()
     {
-        HUD = transform.Find("HUD").GetComponent<HUD>();
+        HUD = GameObject.Find("UI").transform.Find("HUD").GetComponent<HUD>();
         if (HUD == null)
         {
             Debug.LogError("HUD not found");

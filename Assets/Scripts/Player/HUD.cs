@@ -11,7 +11,8 @@ public class HUD : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        player = transform.parent.GetComponent<Player>();
+        
+        player = GameObject.Find("Player").GetComponent<Player>();
         interactPrompt = transform.Find("Interact Prompt").GetComponent<TextMeshProUGUI>();
         if(interactPrompt == null)
         {
