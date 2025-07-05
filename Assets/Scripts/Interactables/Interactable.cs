@@ -14,7 +14,7 @@ public class Interactable : MonoBehaviour
 
     }
     
-    public void Interact(Player player)
+    public virtual void Interact(Player player)
     {
         // This method can be called to interact with the object
         Debug.Log("Interacted with " + gameObject.name+" by " + player.name);

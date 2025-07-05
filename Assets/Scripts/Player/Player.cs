@@ -26,7 +26,9 @@ public class Player : MonoBehaviour
 
     PlayerInput playerInput;
 
-    RaycastHit hit;
+    private RaycastHit hit;
+
+    public Inventory inventory{get; private set;}
 
     [SerializeField] private float hitRange = 2f;
 
@@ -68,11 +70,13 @@ public class Player : MonoBehaviour
     public void Awake()
     {
         playerInput = GetComponent<PlayerInput>();
+        inventory = GetComponent<Inventory>();
 
         playerInput.actions["Move"].performed += OnMove;
         playerInput.actions["Move"].canceled += OnMove;
         playerInput.actions["Look"].performed += OnLook;
         playerInput.actions["Look"].canceled += OnLook;
+        playerInput.actions["Scroll"].performed += inventory.CycleItems;
 
         playerInput.actions["Interact"].performed += ctx => OnInteract();
     }
