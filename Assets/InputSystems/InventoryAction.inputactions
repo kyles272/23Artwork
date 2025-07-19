@@ -1,0 +1,54 @@
+{
+    "name": "InventoryAction",
+    "maps": [
+        {
+            "name": "Inventory",
+            "id": "b53af677-78e6-4b6f-a77f-29f932d34786",
+            "actions": [
+                {
+                    "name": "InventoryToggle",
+                    "type": "Button",
+                    "id": "deab2dbc-dd66-451c-91ba-f102ef1a7060",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "CycleItems",
+                    "type": "PassThrough",
+                    "id": "b9b17f5a-766e-40e2-8493-cf5d7b2c3ba6",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "14789c7a-625d-4eeb-b072-7ccabfa2d1e6",
+                    "path": "<Keyboard>/tab",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "InventoryToggle",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b1848703-7dae-42ec-996c-961625963c85",
+                    "path": "<Mouse>/scroll",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CycleItems",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
