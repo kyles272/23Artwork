@@ -1,3 +1,4 @@
+using UnityEngine;
 using UnityEngine.UI;
 
 public struct Item
@@ -6,12 +7,12 @@ public struct Item
 
     public int itemKey { get; private set; }
 
-    public Image inventoryImage { get; private set; }
-    
-    public Item(string name, int key, Image image)
+    //public Texture2D inventoryImage { get; private set; }
+
+    public Item(string name, int key)
     {
         itemName = name;
         itemKey = key;
-        inventoryImage = image;
+        //inventoryImage = image;
     }
 }

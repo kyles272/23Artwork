@@ -9,6 +9,8 @@ public class Pause : MonoBehaviour
 
     public GameObject pauseMenu;
 
+    
+
     private void Awake()
     {
         action = new PauseAction();

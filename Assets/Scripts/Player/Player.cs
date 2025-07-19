@@ -24,7 +24,7 @@ public class Player : MonoBehaviour
 
     private float currentXRotation = 0f;  // Track current pitch (vertical rotation)
 
-    PlayerInput playerInput;
+    public PlayerInput playerInput{ get; private set; }
 
     private RaycastHit hit;
 
@@ -70,13 +70,12 @@ public class Player : MonoBehaviour
     public void Awake()
     {
         playerInput = GetComponent<PlayerInput>();
-        inventory = GetComponent<Inventory>();
 
         playerInput.actions["Move"].performed += OnMove;
         playerInput.actions["Move"].canceled += OnMove;
         playerInput.actions["Look"].performed += OnLook;
         playerInput.actions["Look"].canceled += OnLook;
-        playerInput.actions["Scroll"].performed += inventory.CycleItems;
+        //playerInput.actions["Scroll"].performed += inventory.CycleItems;
 
         playerInput.actions["Interact"].performed += ctx => OnInteract();
     }
@@ -100,6 +99,13 @@ public class Player : MonoBehaviour
         _camera.transform.localRotation = Quaternion.Euler(0, 0, 0);
 
         hit = new RaycastHit();
+
+        //Connect to Inventory System
+        inventory = FindAnyObjectByType<Inventory>();
+        if (inventory == null)
+        {
+            Debug.LogError("Inventory System not found in Hierarchy");
+        }
     }
 
     void Update()
