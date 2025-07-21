@@ -30,9 +30,23 @@ public class Player : MonoBehaviour
 
     public Inventory inventory{get; private set;}
 
+    public bool isCarrying { get; private set; } = false;
+
+    public Transform carryPoint;
+
     [SerializeField] private float hitRange = 2f;
 
     HUD HUD;
+
+    public void SetIsCarrying(bool result)
+    {
+        isCarrying = result;
+    }
+
+    public RaycastHit GetRaycastHit()
+    {
+        return hit;
+    }
 
     public void OnMove(InputAction.CallbackContext context)
     {
@@ -106,6 +120,11 @@ public class Player : MonoBehaviour
         {
             Debug.LogError("Inventory System not found in Hierarchy");
         }
+
+        //Intialize carry point
+        carryPoint = new GameObject("CarryPoint").transform;
+        carryPoint.SetParent(_camera.transform);
+        carryPoint.localPosition = new Vector3(0, 0, 2f);
     }
 
     void Update()
