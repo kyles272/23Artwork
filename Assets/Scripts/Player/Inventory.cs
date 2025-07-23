@@ -109,7 +109,7 @@ public class Inventory : MonoBehaviour
         if (items.Count != 0) currentItemIndex = (currentItemIndex + direction + items.Count) % items.Count;
 
         // Logic to cycle through items in the inventory
-        if(items.Count > 0)
+        if (items.Count > 0)
             itemNameText.text = items[currentItemIndex].itemName; // Update the item name text
 
         Debug.Log("Current item index after cycling: " + currentItemIndex);

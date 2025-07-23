@@ -46,7 +46,7 @@ public class CarryInteractable : Interactable
         if (isCarried)
         {
             // Update the position of the carried object to follow the player
-            transform.position = player.carryPoint.position;
+            transform.position = player.carryPoint.position; 
         }
     }
 }
