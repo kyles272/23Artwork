@@ -24,9 +24,12 @@ public class CarryInteractable : Interactable
         }
         else if (isCarried)
         {
+            Debug.Log("Player is dropping the carried object.");
             rb.isKinematic = false; // Re-enable physics so the object can fall
+            player.SetIsRotatingCarryObject(false);
             player.SetIsCarrying(false);
             isCarried = false;
+            player.OnToggleCarryRotation(); // Reset the rotation toggle
             return;
         }
         player.SetIsCarrying(true);
@@ -41,12 +44,21 @@ public class CarryInteractable : Interactable
         isCarried = true;
     }
 
+    public void RotateCarryObject(Vector3 lookInput)
+    {
+        if (!player.isRotatingCarryObject) return;
+
+        Vector3 rotation = new Vector3(lookInput.y, lookInput.x, 0);
+        transform.rotation *= Quaternion.Euler(rotation);
+    }
+
+
     public void Update()
     {
         if (isCarried)
         {
             // Update the position of the carried object to follow the player
-            transform.position = player.carryPoint.position; 
+            transform.position = player.carryPoint.position;
         }
     }
 }

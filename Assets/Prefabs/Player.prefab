@@ -131,6 +131,9 @@ MonoBehaviour:
   cameraSpeed: 100
   minY: -40
   maxY: 75
+  mouseSensitivity: 50.3
+  gamepadSensitivity: 100
+  carryPoint: {fileID: 0}
   hitRange: 2
 --- !u!114 &7025571321497782876
 MonoBehaviour:
