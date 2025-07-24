@@ -24,6 +24,8 @@ public class Inventory : MonoBehaviour
     {
         actions = new InventoryAction();
         actions.Inventory.InventoryToggle.performed += _ => ToggleInventory();
+        actions.Inventory.Next.performed += _ => Next();
+        actions.Inventory.Previous.performed += _ => Previous();
         actions.Inventory.CycleItems.performed += CycleItems;
         actions.Enable();
     }
@@ -105,6 +107,7 @@ public class Inventory : MonoBehaviour
 
     public void CycleItems(InputAction.CallbackContext context)
     {
+        if (!isInventoryOpen) return; // Only cycle items if the inventory is open
         int direction = Mathf.RoundToInt(context.ReadValue<Vector2>().y);
         if (items.Count != 0) currentItemIndex = (currentItemIndex + direction + items.Count) % items.Count;
 
@@ -114,10 +117,26 @@ public class Inventory : MonoBehaviour
 
         Debug.Log("Current item index after cycling: " + currentItemIndex);
     }
-    public void setcurrentItemIndex(int index)
+    public void SetCurrentItemIndex(int index)
     {
         currentItemIndex = index;
         Debug.Log("Current item index set to: " + currentItemIndex);
+    }
+
+    public void Next()
+    {
+        if (items.Count == 0 || !isInventoryOpen) return; // No items to cycle through
+        currentItemIndex = (currentItemIndex + 1) % items.Count;
+        itemNameText.text = items[currentItemIndex].itemName; // Update the item name text
+        Debug.Log("Next item selected: " + items[currentItemIndex].itemName);
+    }
+
+    public void Previous()
+    {
+        if (items.Count == 0 || !isInventoryOpen) return; // No items to cycle through
+        currentItemIndex = (currentItemIndex - 1 + items.Count) % items.Count;
+        itemNameText.text = items[currentItemIndex].itemName; // Update the item name text
+        Debug.Log("Previous item selected: " + items[currentItemIndex].itemName);
     }
 
     public void AddItem(string itemName, int itemKey)

@@ -108,6 +108,24 @@ public partial class @InventoryAction: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Next"",
+                    ""type"": ""Button"",
+                    ""id"": ""24dc1b4c-6fa7-4e31-93d0-b75d992345cd"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Previous"",
+                    ""type"": ""Button"",
+                    ""id"": ""8272d1c6-004b-4752-b3f6-e2eaf62ce7f5"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -115,6 +133,17 @@ public partial class @InventoryAction: IInputActionCollection2, IDisposable
                     ""name"": """",
                     ""id"": ""14789c7a-625d-4eeb-b072-7ccabfa2d1e6"",
                     ""path"": ""<Keyboard>/tab"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""InventoryToggle"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""7440e7b8-b468-4ea2-91e4-79c7c1b99d31"",
+                    ""path"": ""<Gamepad>/select"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -132,6 +161,61 @@ public partial class @InventoryAction: IInputActionCollection2, IDisposable
                     ""action"": ""CycleItems"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b0ac5247-f4e1-4bd5-acda-29af9e508779"",
+                    ""path"": ""<Gamepad>/leftStick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""CycleItems"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""947b099a-dcff-4457-a096-2c70d63a2451"",
+                    ""path"": ""<Keyboard>/d"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Next"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""3eb370d7-5748-4cbc-be91-bc212b14763f"",
+                    ""path"": ""<Gamepad>/dpad/right"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Next"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""400fab6b-d1fa-4904-a4e5-f28564e6c630"",
+                    ""path"": ""<Keyboard>/a"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Previous"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""c2842d82-ee69-4276-a0cc-00efe62daea8"",
+                    ""path"": ""<Gamepad>/dpad/left"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Previous"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -142,6 +226,8 @@ public partial class @InventoryAction: IInputActionCollection2, IDisposable
         m_Inventory = asset.FindActionMap("Inventory", throwIfNotFound: true);
         m_Inventory_InventoryToggle = m_Inventory.FindAction("InventoryToggle", throwIfNotFound: true);
         m_Inventory_CycleItems = m_Inventory.FindAction("CycleItems", throwIfNotFound: true);
+        m_Inventory_Next = m_Inventory.FindAction("Next", throwIfNotFound: true);
+        m_Inventory_Previous = m_Inventory.FindAction("Previous", throwIfNotFound: true);
     }
 
     ~@InventoryAction()
@@ -224,6 +310,8 @@ public partial class @InventoryAction: IInputActionCollection2, IDisposable
     private List<IInventoryActions> m_InventoryActionsCallbackInterfaces = new List<IInventoryActions>();
     private readonly InputAction m_Inventory_InventoryToggle;
     private readonly InputAction m_Inventory_CycleItems;
+    private readonly InputAction m_Inventory_Next;
+    private readonly InputAction m_Inventory_Previous;
     /// <summary>
     /// Provides access to input actions defined in input action map "Inventory".
     /// </summary>
@@ -243,6 +331,14 @@ public partial class @InventoryAction: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Inventory/CycleItems".
         /// </summary>
         public InputAction @CycleItems => m_Wrapper.m_Inventory_CycleItems;
+        /// <summary>
+        /// Provides access to the underlying input action "Inventory/Next".
+        /// </summary>
+        public InputAction @Next => m_Wrapper.m_Inventory_Next;
+        /// <summary>
+        /// Provides access to the underlying input action "Inventory/Previous".
+        /// </summary>
+        public InputAction @Previous => m_Wrapper.m_Inventory_Previous;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -275,6 +371,12 @@ public partial class @InventoryAction: IInputActionCollection2, IDisposable
             @CycleItems.started += instance.OnCycleItems;
             @CycleItems.performed += instance.OnCycleItems;
             @CycleItems.canceled += instance.OnCycleItems;
+            @Next.started += instance.OnNext;
+            @Next.performed += instance.OnNext;
+            @Next.canceled += instance.OnNext;
+            @Previous.started += instance.OnPrevious;
+            @Previous.performed += instance.OnPrevious;
+            @Previous.canceled += instance.OnPrevious;
         }
 
         /// <summary>
@@ -292,6 +394,12 @@ public partial class @InventoryAction: IInputActionCollection2, IDisposable
             @CycleItems.started -= instance.OnCycleItems;
             @CycleItems.performed -= instance.OnCycleItems;
             @CycleItems.canceled -= instance.OnCycleItems;
+            @Next.started -= instance.OnNext;
+            @Next.performed -= instance.OnNext;
+            @Next.canceled -= instance.OnNext;
+            @Previous.started -= instance.OnPrevious;
+            @Previous.performed -= instance.OnPrevious;
+            @Previous.canceled -= instance.OnPrevious;
         }
 
         /// <summary>
@@ -346,5 +454,19 @@ public partial class @InventoryAction: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnCycleItems(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Next" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnNext(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Previous" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnPrevious(InputAction.CallbackContext context);
     }
 }
