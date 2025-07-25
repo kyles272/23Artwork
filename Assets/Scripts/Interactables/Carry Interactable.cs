@@ -10,6 +10,8 @@ public class CarryInteractable : Interactable
 
     private Player player;
 
+    private static float rotationSpeed = 7.5f; // Speed of rotation when carrying the object
+
     public void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -44,9 +46,13 @@ public class CarryInteractable : Interactable
         isCarried = true;
     }
 
-    public void RotateCarryObject(Vector3 lookInput)
+    public void RotateCarryObject(Vector2 lookInput)
     {
         if (!player.isRotatingCarryObject) return;
+
+        Debug.Log("lookInput: " + lookInput);
+
+        lookInput = lookInput.normalized; // Normalize the input to prevent speed increase with larger input values
 
         Vector3 rotation = new Vector3(lookInput.y, lookInput.x, 0);
         transform.rotation *= Quaternion.Euler(rotation);
