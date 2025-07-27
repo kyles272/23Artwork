@@ -19,7 +19,8 @@ public class CarryInteractable : Interactable
 
     public override void Interact(Player player)
     {
-        if (player.isCarrying && !isCarried)
+        if (PlayerState.instance.currentState == PlayerStateType.CarryingObject
+            && !isCarried)
         {
             Debug.Log("Player is already carrying an object.");
             return;

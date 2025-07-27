@@ -1,8 +1,7 @@
-using System;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+[RequireComponent(typeof(PlayerInput))]
 public class Player : MonoBehaviour
 {
     Vector2 movementInput;
@@ -23,7 +22,7 @@ public class Player : MonoBehaviour
     [SerializeField] private float maxY = 40f;   // Max vertical rotation angle
 
     private float currentXRotation = 0f;  // Track current pitch (vertical rotation)
-    
+
     [SerializeField] private float mouseSensitivity = 100f; // Mouse sensitivity multiplier
 
     [SerializeField] private float gamepadSensitivity = 100f; // Gamepad analog stick sensitivity multiplier
@@ -32,7 +31,7 @@ public class Player : MonoBehaviour
 
     private RaycastHit hit;
 
-    public Inventory inventory{get; private set;}
+    public Inventory inventory { get; private set; }
 
     public bool isCarrying { get; private set; } = false;
 
@@ -48,13 +47,27 @@ public class Player : MonoBehaviour
 
     public void SetIsCarrying(bool result)
     {
-        isCarrying = result;
-        //Add controls for rotating the carried object
+        if (result)
+        {
+            PlayerState.instance.TriggerTransition(PlayerStateType.CarryingObject);
+        }
+        else
+        {
+            PlayerState.instance.TriggerTransition(PlayerStateType.Idle);
+        }
     }
 
     public void SetIsRotatingCarryObject(bool result)
     {
         isRotatingCarryObject = result;
+        if (result)
+        {
+            PlayerState.instance.TriggerTransition(PlayerStateType.RotatingCarryObject);
+        }
+        else
+        {
+            PlayerState.instance.TriggerTransition(PlayerStateType.Idle);
+        }
     }
 
     public RaycastHit GetRaycastHit()
@@ -69,7 +82,7 @@ public class Player : MonoBehaviour
 
     public void OnLook(InputAction.CallbackContext context)
     {
-        
+
         Vector2 lookInput = context.ReadValue<Vector2>();
 
         if (Gamepad.current != null && Gamepad.current.wasUpdatedThisFrame)
@@ -89,7 +102,7 @@ public class Player : MonoBehaviour
     public void OnInteract()
     {
         Debug.Log("Interact button pressed");
-        if (hit.collider!= null && hit.collider.gameObject.GetComponent<Interactable>() != null)
+        if (hit.collider != null && hit.collider.gameObject.GetComponent<Interactable>() != null)
         {
             // Call the Interact method on the Interactable component
             hit.collider.GetComponent<Interactable>().Interact(this);
@@ -117,7 +130,7 @@ public class Player : MonoBehaviour
             isRotatingCarryObject = !isRotatingCarryObject;
             OnToggleCarryRotation();
         }
-        
+
     }
 
     private System.Action<InputAction.CallbackContext> rotateCarryObjectCallback;
