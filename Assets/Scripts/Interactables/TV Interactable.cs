@@ -13,8 +13,6 @@ public class TVInteractable : Interactable
 
     private Renderer _screenRenderer;
 
-    [SerializeField] private VideoClip defaultVideoClip;
-
     [SerializeField] private Material TVOffMaterial;
 
     [SerializeField] private Material TVOnMaterial;
@@ -37,16 +35,6 @@ public class TVInteractable : Interactable
             Debug.LogError("VideoPlayer component not found on the screen object.");
             return;
         }
-        if (defaultVideoClip != null)
-        {
-            videoPlayer.clip = defaultVideoClip;
-        }
-        else
-        {
-            Debug.LogWarning("Default video clip is not assigned.");
-        }
-
-
     }
 
     public override void Interact(Player player)
