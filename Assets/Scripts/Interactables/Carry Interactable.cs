@@ -32,6 +32,8 @@ public class CarryInteractable : Interactable
             player.SetIsCarrying(false);
             isCarried = false;
             player.OnToggleCarryRotation(); // Reset the rotation toggle
+            // Reset the layer of the object to its default layer
+            gameObject.layer = LayerMask.NameToLayer("Default");
             return;
         }
         player.SetIsCarrying(true);
@@ -44,6 +46,9 @@ public class CarryInteractable : Interactable
 
         this.player = player;
         isCarried = true;
+
+        //Set the layer of the carried object to Carry to avoid collisions with the player
+        gameObject.layer = LayerMask.NameToLayer("Carry");
     }
 
     public void RotateCarryObject(Vector2 lookInput)
