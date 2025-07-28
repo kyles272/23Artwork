@@ -23,16 +23,44 @@ public class Player : MonoBehaviour
     [SerializeField] private float maxY = 40f;   // Max vertical rotation angle
 
     private float currentXRotation = 0f;  // Track current pitch (vertical rotation)
+    
+    [SerializeField] private float mouseSensitivity = 100f; // Mouse sensitivity multiplier
 
-    public PlayerInput playerInput{ get; private set; }
+    [SerializeField] private float gamepadSensitivity = 100f; // Gamepad analog stick sensitivity multiplier
+
+    public PlayerInput playerInput { get; private set; }
 
     private RaycastHit hit;
 
     public Inventory inventory{get; private set;}
 
+    public bool isCarrying { get; private set; } = false;
+
+    public bool isRotatingCarryObject { get; private set; } = false;
+
+    public GameObject carriedObject;
+
+    public Transform carryPoint;
+
     [SerializeField] private float hitRange = 2f;
 
     HUD HUD;
+
+    public void SetIsCarrying(bool result)
+    {
+        isCarrying = result;
+        //Add controls for rotating the carried object
+    }
+
+    public void SetIsRotatingCarryObject(bool result)
+    {
+        isRotatingCarryObject = result;
+    }
+
+    public RaycastHit GetRaycastHit()
+    {
+        return hit;
+    }
 
     public void OnMove(InputAction.CallbackContext context)
     {
@@ -41,6 +69,7 @@ public class Player : MonoBehaviour
 
     public void OnLook(InputAction.CallbackContext context)
     {
+        
         Vector2 lookInput = context.ReadValue<Vector2>();
 
         if (Gamepad.current != null && Gamepad.current.wasUpdatedThisFrame)
@@ -52,8 +81,8 @@ public class Player : MonoBehaviour
         else
         {
             // Mouse input (already in delta)
-            xRotation = lookInput.x;
-            yRotation = lookInput.y;
+            xRotation = lookInput.x * 100f;
+            yRotation = lookInput.y * 100f;
         }
     }
 
@@ -78,7 +107,62 @@ public class Player : MonoBehaviour
         //playerInput.actions["Scroll"].performed += inventory.CycleItems;
 
         playerInput.actions["Interact"].performed += ctx => OnInteract();
+        playerInput.actions["RotateCarryObject"].performed += ctx => ToggleCarryRotation();
     }
+
+    public void ToggleCarryRotation()
+    {
+        if (isCarrying)
+        {
+            isRotatingCarryObject = !isRotatingCarryObject;
+            OnToggleCarryRotation();
+        }
+        
+    }
+
+    private System.Action<InputAction.CallbackContext> rotateCarryObjectCallback;
+
+    public void OnToggleCarryRotation()
+    {
+        if (isCarrying)
+        {
+            Debug.Log("Toggling Carry Rotation: " + isRotatingCarryObject);
+            if (isRotatingCarryObject)
+            {
+                // Unsubscribe from normal camera look
+                playerInput.actions["Look"].performed -= OnLook;
+
+                // Only set up the callback once
+                if (rotateCarryObjectCallback == null)
+                {
+                    rotateCarryObjectCallback = ctx =>
+                    {
+                        if (carriedObject != null)
+                        {
+                            carriedObject.GetComponent<CarryInteractable>().RotateCarryObject(ctx.ReadValue<Vector2>());
+                        }
+                    };
+                }
+
+                // Make sure carriedObject is updated
+                if (hit.collider != null && hit.collider.gameObject.TryGetComponent(out CarryInteractable carryInteractable))
+                {
+                    carriedObject = hit.collider.gameObject;
+                    playerInput.actions["Look"].performed += rotateCarryObjectCallback;
+                }
+            }
+            else
+            {
+                Debug.Log("Current Carried Object: " + carriedObject);
+                playerInput.actions["Look"].performed -= rotateCarryObjectCallback;
+                playerInput.actions["Look"].performed += OnLook;
+            }
+            return;
+        }
+        playerInput.actions["Look"].performed -= rotateCarryObjectCallback;
+        playerInput.actions["Look"].performed += OnLook;
+    }
+
 
 
     void Start()
@@ -106,6 +190,11 @@ public class Player : MonoBehaviour
         {
             Debug.LogError("Inventory System not found in Hierarchy");
         }
+
+        //Intialize carry point
+        carryPoint = new GameObject("CarryPoint").transform;
+        carryPoint.SetParent(_camera.transform);
+        carryPoint.localPosition = new Vector3(0, 0, 2f);
     }
 
     void Update()
