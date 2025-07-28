@@ -5,8 +5,6 @@ using UnityEngine.Video;
 public class TVInteractable : Interactable
 {
 
-    [SerializeField] private GameObject _camera;
-
     private VideoPlayer videoPlayer;
 
     private GameObject _screen;
@@ -17,7 +15,11 @@ public class TVInteractable : Interactable
 
     [SerializeField] private Material TVOnMaterial;
 
-    bool isPlaying = false;
+    [SerializeField] private Material TVCameraFeedMaterial;
+
+    private bool isPlaying = false;
+
+    [SerializeField] private bool isCameraFeed = false;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -35,6 +37,8 @@ public class TVInteractable : Interactable
             Debug.LogError("VideoPlayer component not found on the screen object.");
             return;
         }
+
+        _screenRenderer.material = TVOffMaterial;
     }
 
     public override void Interact(Player player)
@@ -49,15 +53,25 @@ public class TVInteractable : Interactable
         else
         {
             _screenRenderer.material = TVOffMaterial;
-            videoPlayer.Stop();
+            if (!isCameraFeed)
+            {
+                videoPlayer.Stop();
+            }
         }
     }
 
     IEnumerator WaitForVideoToStart()
     {
         //Wait for video to start playing before changing the material
-        videoPlayer.Play();
-        yield return new WaitUntil(() => videoPlayer.isPlaying);
-        _screenRenderer.material = TVOnMaterial;
+        if (!isCameraFeed)
+        {
+            videoPlayer.Play();
+            yield return new WaitUntil(() => videoPlayer.isPlaying);
+            _screenRenderer.material = TVOnMaterial;
+        }
+        else
+        {
+            _screenRenderer.material = TVCameraFeedMaterial;
+        }
     }
 }
