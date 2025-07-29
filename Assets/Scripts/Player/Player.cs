@@ -39,7 +39,7 @@ public class Player : MonoBehaviour
 
     public GameObject carriedObject;
 
-    public Transform carryPoint;
+    public GameObject carryPoint;
 
     [SerializeField] private float hitRange = 2f;
 
@@ -140,12 +140,12 @@ public class Player : MonoBehaviour
         if (isCarrying)
         {
             Debug.Log("Toggling Carry Rotation: " + isRotatingCarryObject);
+
             if (isRotatingCarryObject)
             {
                 // Unsubscribe from normal camera look
                 playerInput.actions["Look"].performed -= OnLook;
 
-                // Only set up the callback once
                 if (rotateCarryObjectCallback == null)
                 {
                     rotateCarryObjectCallback = ctx =>
@@ -157,24 +157,48 @@ public class Player : MonoBehaviour
                     };
                 }
 
-                // Make sure carriedObject is updated
+                // Assign callback for rotation input
                 if (hit.collider != null && hit.collider.gameObject.TryGetComponent(out CarryInteractable carryInteractable))
                 {
                     carriedObject = hit.collider.gameObject;
                     playerInput.actions["Look"].performed += rotateCarryObjectCallback;
                 }
+
+                // Freeze physics while rotating manually
+                var rb = carriedObject.GetComponent<Rigidbody>();
+                rb.isKinematic = true;
+
+                // Remove joint if it exists
+                var joint = carriedObject.GetComponent<FixedJoint>();
+                if (joint != null) Destroy(joint);
             }
             else
             {
-                Debug.Log("Current Carried Object: " + carriedObject);
+                Debug.Log("Re-enabling carry mode with physics follow");
+
+                // Remove rotation callback and resume camera control
                 playerInput.actions["Look"].performed -= rotateCarryObjectCallback;
                 playerInput.actions["Look"].performed += OnLook;
+
+                var rb = carriedObject.GetComponent<Rigidbody>();
+                rb.isKinematic = false;
+
+                // Re-add joint to make object follow the carryPoint
+                var joint = carriedObject.AddComponent<FixedJoint>();
+                joint.connectedBody = carryPoint.GetComponent<Rigidbody>();
+                joint.breakForce = Mathf.Infinity;
+                joint.breakTorque = Mathf.Infinity;
+                joint.enablePreprocessing = false;
             }
+
             return;
         }
+
+        // If not carrying, just reset look
         playerInput.actions["Look"].performed -= rotateCarryObjectCallback;
         playerInput.actions["Look"].performed += OnLook;
     }
+
 
 
 
@@ -205,9 +229,14 @@ public class Player : MonoBehaviour
         }
 
         //Intialize carry point
-        carryPoint = new GameObject("CarryPoint").transform;
-        carryPoint.SetParent(_camera.transform);
-        carryPoint.localPosition = new Vector3(0, 0, 2f);
+        carryPoint = new GameObject("CarryPoint");
+        carryPoint.transform.SetParent(_camera.transform);
+        carryPoint.transform.localPosition = new Vector3(0, 0, 2f);
+
+        // Add Rigidbody to carryPoint so it can act as a joint anchor
+        Rigidbody carryRb = carryPoint.AddComponent<Rigidbody>();
+        carryRb.useGravity = false;
+        carryRb.isKinematic = true;
     }
 
     void Update()

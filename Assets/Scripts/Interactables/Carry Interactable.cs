@@ -12,6 +12,8 @@ public class CarryInteractable : Interactable
 
     private static float rotationSpeed = 7.5f; // Speed of rotation when carrying the object
 
+    public FixedJoint carryJoint;
+
     public void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -28,44 +30,49 @@ public class CarryInteractable : Interactable
         else if (isCarried)
         {
             Debug.Log("Player is dropping the carried object.");
-            rb.isKinematic = false; // Re-enable physics so the object can fall
+
+            // Drop logic
+            if (carryJoint != null)
+            {
+                Destroy(carryJoint); // Remove the joint
+            }
+
+            rb.useGravity = true;
+
             player.SetIsRotatingCarryObject(false);
             player.SetIsCarrying(false);
             isCarried = false;
-            player.OnToggleCarryRotation(); // Reset the rotation toggle
+            player.OnToggleCarryRotation();
+            gameObject.layer = LayerMask.NameToLayer("Default");
             return;
         }
-        player.SetIsCarrying(true);
-        //Have the player pick up the object
-        rb.isKinematic = true; // Disable physics so the object can be moved manually
-        //Get the raycast the player is using to interact with objects
 
-        //The item will be floating in front of the player based on the position of the raycast hit
-        transform.position = player.carryPoint.position;
-
+        // Pick up logic
         this.player = player;
         isCarried = true;
+        player.SetIsCarrying(true);
+
+        rb.useGravity = false;
+
+        gameObject.layer = LayerMask.NameToLayer("Carry");
+
+        // Initialize the carry joint
+        carryJoint = gameObject.AddComponent<FixedJoint>();
+        carryJoint.connectedBody = player.carryPoint.GetComponent<Rigidbody>();
+
+        carryJoint.breakForce = Mathf.Infinity;
+        carryJoint.breakTorque = Mathf.Infinity;
+
     }
+
 
     public void RotateCarryObject(Vector2 lookInput)
     {
         if (!player.isRotatingCarryObject) return;
 
-        Debug.Log("lookInput: " + lookInput);
-
         lookInput = lookInput.normalized; // Normalize the input to prevent speed increase with larger input values
 
         Vector3 rotation = new Vector3(lookInput.y, lookInput.x, 0);
         transform.rotation *= Quaternion.Euler(rotation);
-    }
-
-
-    public void Update()
-    {
-        if (isCarried)
-        {
-            // Update the position of the carried object to follow the player
-            transform.position = player.carryPoint.position;
-        }
     }
 }
