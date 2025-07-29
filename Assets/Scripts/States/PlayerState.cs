@@ -65,8 +65,10 @@ public class PlayerState : MonoBehaviour
         stateMachine.AddState(PlayerStateType.CarryingObject, onEnter: state => UpdateState(PlayerStateType.CarryingObject));
         stateMachine.AddState(PlayerStateType.RotatingCarryObject, onEnter: state => UpdateState(PlayerStateType.RotatingCarryObject));
 
-        stateMachine.AddTriggerTransition("OnCarryingObject", new PlayerTransition(PlayerStateType.Idle, PlayerStateType.CarryingObject));
         stateMachine.AddTriggerTransitionFromAny("OnIdle", new PlayerTransition(PlayerStateType.Idle, PlayerStateType.Idle));
+        stateMachine.AddTriggerTransitionFromAny("OnCarryingObject", new PlayerTransition(PlayerStateType.CarryingObject, PlayerStateType.CarryingObject));
+        stateMachine.AddTriggerTransition("OnRotatingCarryObject", new PlayerTransition(PlayerStateType.CarryingObject, PlayerStateType.RotatingCarryObject));
+
         stateMachine.Init();
     }
 

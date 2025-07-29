@@ -1,5 +1,7 @@
+using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(PlayerInput))]
 public class Player : MonoBehaviour
@@ -33,9 +35,7 @@ public class Player : MonoBehaviour
 
     public Inventory inventory { get; private set; }
 
-    public bool isCarrying { get; private set; } = false;
-
-    public bool isRotatingCarryObject { get; private set; } = false;
+    public bool ToggleRotation { get; private set; } = false;
 
     public GameObject carriedObject;
 
@@ -59,7 +59,7 @@ public class Player : MonoBehaviour
 
     public void SetIsRotatingCarryObject(bool result)
     {
-        isRotatingCarryObject = result;
+        ToggleRotation = result;
         if (result)
         {
             PlayerState.instance.TriggerTransition(PlayerStateType.RotatingCarryObject);
@@ -125,9 +125,11 @@ public class Player : MonoBehaviour
 
     public void ToggleCarryRotation()
     {
-        if (isCarrying)
+        if (PlayerState.instance.currentState == PlayerStateType.CarryingObject
+            || PlayerState.instance.currentState == PlayerStateType.RotatingCarryObject)
         {
-            isRotatingCarryObject = !isRotatingCarryObject;
+            ToggleRotation = !ToggleRotation;
+            PlayerState.instance.TriggerTransition(ToggleRotation ? PlayerStateType.RotatingCarryObject : PlayerStateType.CarryingObject);
             OnToggleCarryRotation();
         }
 
@@ -137,66 +139,60 @@ public class Player : MonoBehaviour
 
     public void OnToggleCarryRotation()
     {
-        if (isCarrying)
+        Debug.Log("Toggling Carry Rotation: " + ToggleRotation);
+
+        if (ToggleRotation)
         {
-            Debug.Log("Toggling Carry Rotation: " + isRotatingCarryObject);
+            // Unsubscribe from normal camera look
+            playerInput.actions["Look"].performed -= OnLook;
 
-            if (isRotatingCarryObject)
+            if (rotateCarryObjectCallback == null)
             {
-                // Unsubscribe from normal camera look
-                playerInput.actions["Look"].performed -= OnLook;
-
-                if (rotateCarryObjectCallback == null)
+                rotateCarryObjectCallback = ctx =>
                 {
-                    rotateCarryObjectCallback = ctx =>
+                    if (carriedObject != null)
                     {
-                        if (carriedObject != null)
-                        {
-                            carriedObject.GetComponent<CarryInteractable>().RotateCarryObject(ctx.ReadValue<Vector2>());
-                        }
-                    };
-                }
-
-                // Assign callback for rotation input
-                if (hit.collider != null && hit.collider.gameObject.TryGetComponent(out CarryInteractable carryInteractable))
-                {
-                    carriedObject = hit.collider.gameObject;
-                    playerInput.actions["Look"].performed += rotateCarryObjectCallback;
-                }
-
-                // Freeze physics while rotating manually
-                var rb = carriedObject.GetComponent<Rigidbody>();
-                rb.isKinematic = true;
-
-                // Remove joint if it exists
-                var joint = carriedObject.GetComponent<FixedJoint>();
-                if (joint != null) Destroy(joint);
+                        carriedObject.GetComponent<CarryInteractable>().RotateCarryObject(ctx.ReadValue<Vector2>());
+                    }
+                };
             }
-            else
+
+            // Assign callback for rotation input
+            if (hit.collider != null && hit.collider.gameObject.TryGetComponent(out CarryInteractable carryInteractable))
             {
-                Debug.Log("Re-enabling carry mode with physics follow");
-
-                // Remove rotation callback and resume camera control
-                playerInput.actions["Look"].performed -= rotateCarryObjectCallback;
-                playerInput.actions["Look"].performed += OnLook;
-
-                var rb = carriedObject.GetComponent<Rigidbody>();
-                rb.isKinematic = false;
-
-                // Re-add joint to make object follow the carryPoint
-                var joint = carriedObject.AddComponent<FixedJoint>();
-                joint.connectedBody = carryPoint.GetComponent<Rigidbody>();
-                joint.breakForce = Mathf.Infinity;
-                joint.breakTorque = Mathf.Infinity;
-                joint.enablePreprocessing = false;
+                carriedObject = hit.collider.gameObject;
+                playerInput.actions["Look"].performed += rotateCarryObjectCallback;
             }
 
-            return;
+            // Freeze physics while rotating manually
+            var rb = carriedObject.GetComponent<Rigidbody>();
+            rb.isKinematic = true;
+
+            // Remove joint if it exists
+            var joint = carriedObject.GetComponent<FixedJoint>();
+            if (joint != null) Destroy(joint);
+        }
+        else
+        {
+            Debug.Log("Re-enabling carry mode with physics follow");
+
+            // Remove rotation callback and resume camera control
+            playerInput.actions["Look"].performed -= rotateCarryObjectCallback;
+            playerInput.actions["Look"].performed += OnLook;
+
+            var rb = carriedObject.GetComponent<Rigidbody>();
+            rb.isKinematic = false;
+
+            // Re-add joint to make object follow the carryPoint
+            var joint = carriedObject.AddComponent<FixedJoint>();
+            joint.connectedBody = carryPoint.GetComponent<Rigidbody>();
+            joint.breakForce = Mathf.Infinity;
+            joint.breakTorque = Mathf.Infinity;
+            joint.enablePreprocessing = false;
         }
 
         // If not carrying, just reset look
-        playerInput.actions["Look"].performed -= rotateCarryObjectCallback;
-        playerInput.actions["Look"].performed += OnLook;
+        
     }
 
 

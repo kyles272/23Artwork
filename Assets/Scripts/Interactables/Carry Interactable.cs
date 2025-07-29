@@ -1,3 +1,4 @@
+using System;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -27,22 +28,27 @@ public class CarryInteractable : Interactable
             Debug.Log("Player is already carrying an object.");
             return;
         }
+        if (PlayerState.instance.currentState == PlayerStateType.RotatingCarryObject)
+        {
+            Debug.Log("Player is already rotating a carried object.");
+            return;
+        }
         else if (isCarried)
         {
             Debug.Log("Player is dropping the carried object.");
 
             // Drop logic
-            if (carryJoint != null)
+            if(carryJoint != null)
             {
                 Destroy(carryJoint); // Remove the joint
             }
+            
 
             rb.useGravity = true;
 
             player.SetIsRotatingCarryObject(false);
             player.SetIsCarrying(false);
             isCarried = false;
-            player.OnToggleCarryRotation();
             gameObject.layer = LayerMask.NameToLayer("Default");
             return;
         }
@@ -68,7 +74,7 @@ public class CarryInteractable : Interactable
 
     public void RotateCarryObject(Vector2 lookInput)
     {
-        if (!player.isRotatingCarryObject) return;
+        if (!player.ToggleRotation) return;
 
         lookInput = lookInput.normalized; // Normalize the input to prevent speed increase with larger input values
 
