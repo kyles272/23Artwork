@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+[System.Serializable]
 public struct Item
 {
     public string itemName { get; private set; }
