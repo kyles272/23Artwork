@@ -1,8 +1,9 @@
-using System;
-using Unity.VisualScripting;
+using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
+[RequireComponent(typeof(PlayerInput))]
 public class Player : MonoBehaviour
 {
     Vector2 movementInput;
@@ -23,7 +24,7 @@ public class Player : MonoBehaviour
     [SerializeField] private float maxY = 40f;   // Max vertical rotation angle
 
     private float currentXRotation = 0f;  // Track current pitch (vertical rotation)
-    
+
     [SerializeField] private float mouseSensitivity = 100f; // Mouse sensitivity multiplier
 
     [SerializeField] private float gamepadSensitivity = 100f; // Gamepad analog stick sensitivity multiplier
@@ -32,11 +33,9 @@ public class Player : MonoBehaviour
 
     private RaycastHit hit;
 
-    public Inventory inventory{get; private set;}
+    public Inventory inventory { get; private set; }
 
-    public bool isCarrying { get; private set; } = false;
-
-    public bool isRotatingCarryObject { get; private set; } = false;
+    public bool ToggleRotation { get; private set; } = false;
 
     public GameObject carriedObject;
 
@@ -45,56 +44,6 @@ public class Player : MonoBehaviour
     [SerializeField] private float hitRange = 2f;
 
     HUD HUD;
-
-    public void SetIsCarrying(bool result)
-    {
-        isCarrying = result;
-        //Add controls for rotating the carried object
-    }
-
-    public void SetIsRotatingCarryObject(bool result)
-    {
-        isRotatingCarryObject = result;
-    }
-
-    public RaycastHit GetRaycastHit()
-    {
-        return hit;
-    }
-
-    public void OnMove(InputAction.CallbackContext context)
-    {
-        movementInput = context.ReadValue<Vector2>();
-    }
-
-    public void OnLook(InputAction.CallbackContext context)
-    {
-        
-        Vector2 lookInput = context.ReadValue<Vector2>();
-
-        if (Gamepad.current != null && Gamepad.current.wasUpdatedThisFrame)
-        {
-            // Analog stick sensitivity multiplier
-            xRotation = lookInput.x * 100f; // Tweak multiplier as needed
-            yRotation = lookInput.y * 100f;
-        }
-        else
-        {
-            // Mouse input (already in delta)
-            xRotation = lookInput.x * 100f;
-            yRotation = lookInput.y * 100f;
-        }
-    }
-
-    public void OnInteract()
-    {
-        Debug.Log("Interact button pressed");
-        if (hit.collider!= null && hit.collider.gameObject.GetComponent<Interactable>() != null)
-        {
-            // Call the Interact method on the Interactable component
-            hit.collider.GetComponent<Interactable>().Interact(this);
-        }
-    }
 
     public void Awake()
     {
@@ -107,87 +56,8 @@ public class Player : MonoBehaviour
         //playerInput.actions["Scroll"].performed += inventory.CycleItems;
 
         playerInput.actions["Interact"].performed += ctx => OnInteract();
-        playerInput.actions["RotateCarryObject"].performed += ctx => ToggleCarryRotation();
+        playerInput.actions["RotateCarryObject"].performed += ctx => RotateCarryObject();
     }
-
-    public void ToggleCarryRotation()
-    {
-        if (isCarrying)
-        {
-            isRotatingCarryObject = !isRotatingCarryObject;
-            OnToggleCarryRotation();
-        }
-        
-    }
-
-    private System.Action<InputAction.CallbackContext> rotateCarryObjectCallback;
-
-    public void OnToggleCarryRotation()
-    {
-        if (isCarrying)
-        {
-            Debug.Log("Toggling Carry Rotation: " + isRotatingCarryObject);
-
-            if (isRotatingCarryObject)
-            {
-                // Unsubscribe from normal camera look
-                playerInput.actions["Look"].performed -= OnLook;
-
-                if (rotateCarryObjectCallback == null)
-                {
-                    rotateCarryObjectCallback = ctx =>
-                    {
-                        if (carriedObject != null)
-                        {
-                            carriedObject.GetComponent<CarryInteractable>().RotateCarryObject(ctx.ReadValue<Vector2>());
-                        }
-                    };
-                }
-
-                // Assign callback for rotation input
-                if (hit.collider != null && hit.collider.gameObject.TryGetComponent(out CarryInteractable carryInteractable))
-                {
-                    carriedObject = hit.collider.gameObject;
-                    playerInput.actions["Look"].performed += rotateCarryObjectCallback;
-                }
-
-                // Freeze physics while rotating manually
-                var rb = carriedObject.GetComponent<Rigidbody>();
-                rb.isKinematic = true;
-
-                // Remove joint if it exists
-                var joint = carriedObject.GetComponent<FixedJoint>();
-                if (joint != null) Destroy(joint);
-            }
-            else
-            {
-                Debug.Log("Re-enabling carry mode with physics follow");
-
-                // Remove rotation callback and resume camera control
-                playerInput.actions["Look"].performed -= rotateCarryObjectCallback;
-                playerInput.actions["Look"].performed += OnLook;
-
-                var rb = carriedObject.GetComponent<Rigidbody>();
-                rb.isKinematic = false;
-
-                // Re-add joint to make object follow the carryPoint
-                var joint = carriedObject.AddComponent<FixedJoint>();
-                joint.connectedBody = carryPoint.GetComponent<Rigidbody>();
-                joint.breakForce = Mathf.Infinity;
-                joint.breakTorque = Mathf.Infinity;
-                joint.enablePreprocessing = false;
-            }
-
-            return;
-        }
-
-        // If not carrying, just reset look
-        playerInput.actions["Look"].performed -= rotateCarryObjectCallback;
-        playerInput.actions["Look"].performed += OnLook;
-    }
-
-
-
 
     void Start()
     {
@@ -224,6 +94,89 @@ public class Player : MonoBehaviour
         Rigidbody carryRb = carryPoint.AddComponent<Rigidbody>();
         carryRb.useGravity = false;
         carryRb.isKinematic = true;
+    }
+
+    public void RotateCarryObject()
+    {
+        if (PlayerState.instance.currentState == PlayerStateType.CarryingObject)
+        {
+            Debug.Log("Player is rotating the carried object.");
+            PlayerState.instance.TriggerTransition(PlayerStateType.RotatingCarryObject);
+            playerInput.actions["Move"].performed -= OnMove;
+            playerInput.actions["Look"].performed -= OnLook;
+            playerInput.actions["Look"].performed += carriedObject.GetComponent<CarryInteractable>().RotateObject;
+            carriedObject.GetComponent<CarryInteractable>().DisableFixedJoint();
+        }
+        else if (PlayerState.instance.currentState == PlayerStateType.RotatingCarryObject)
+        {
+            Debug.Log("Player is not rotating the carried object.");
+            PlayerState.instance.TriggerTransition(PlayerStateType.CarryingObject);
+            playerInput.actions["Move"].performed += OnMove;
+            playerInput.actions["Look"].performed -= carriedObject.GetComponent<CarryInteractable>().RotateObject;
+            playerInput.actions["Look"].performed += OnLook;
+            carriedObject.GetComponent<CarryInteractable>().EnableFixedJoint();
+        }
+        else
+        {
+            Debug.Log("Player is not carrying an object to rotate.");
+        }
+    }
+
+    public void SetIsCarrying(bool result)
+    {
+        if (result)
+        {
+            PlayerState.instance.TriggerTransition(PlayerStateType.CarryingObject);
+        }
+        else
+        {
+            PlayerState.instance.TriggerTransition(PlayerStateType.Idle);
+        }
+    }
+
+    public RaycastHit GetRaycastHit()
+    {
+        return hit;
+    }
+
+    public void OnMove(InputAction.CallbackContext context)
+    {
+        movementInput = context.ReadValue<Vector2>();
+    }
+
+    public void OnLook(InputAction.CallbackContext context)
+    {
+
+        Vector2 lookInput = context.ReadValue<Vector2>();
+
+        if (Gamepad.current != null && Gamepad.current.wasUpdatedThisFrame)
+        {
+            // Analog stick sensitivity multiplier
+            xRotation = lookInput.x * 100f; // Tweak multiplier as needed
+            yRotation = lookInput.y * 100f;
+        }
+        else
+        {
+            // Mouse input (already in delta)
+            xRotation = lookInput.x * 100f;
+            yRotation = lookInput.y * 100f;
+        }
+    }
+
+    public void OnInteract()
+    {
+        Debug.Log("Interact button pressed");
+        if (carriedObject != null && (PlayerState.instance.currentState == PlayerStateType.CarryingObject || PlayerState.instance.currentState == PlayerStateType.RotatingCarryObject))
+        {
+            // If the player is carrying an object, drop it
+            carriedObject.GetComponent<CarryInteractable>().Interact(this);
+            return;
+        }
+        if (hit.collider != null && hit.collider.gameObject.GetComponent<Interactable>() != null)
+        {
+            // Call the Interact method on the Interactable component
+            hit.collider.GetComponent<Interactable>().Interact(this);
+        }
     }
 
     void Update()

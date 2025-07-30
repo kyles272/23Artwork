@@ -1,5 +1,7 @@
+using System;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class CarryInteractable : Interactable
 {
@@ -14,6 +16,9 @@ public class CarryInteractable : Interactable
 
     public FixedJoint carryJoint;
 
+    private bool isRotating = false;
+
+
     public void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -21,31 +26,49 @@ public class CarryInteractable : Interactable
 
     public override void Interact(Player player)
     {
-        if (player.isCarrying && !isCarried)
+        if (PlayerState.instance.currentState == PlayerStateType.CarryingObject
+            && !isCarried)
         {
             Debug.Log("Player is already carrying an object.");
             return;
         }
         else if (isCarried)
         {
-            Debug.Log("Player is dropping the carried object.");
-
-            // Drop logic
-            if (carryJoint != null)
-            {
-                Destroy(carryJoint); // Remove the joint
-            }
-
-            rb.useGravity = true;
-
-            player.SetIsRotatingCarryObject(false);
-            player.SetIsCarrying(false);
-            isCarried = false;
-            player.OnToggleCarryRotation();
-            gameObject.layer = LayerMask.NameToLayer("Default");
+            DropObject(player);
             return;
         }
 
+        PickUp(player);
+
+    }
+
+    private void DropObject(Player player)
+    {
+        Debug.Log("Player is dropping the carried object.");
+
+        if (PlayerState.instance.currentState == PlayerStateType.RotatingCarryObject)
+        {
+            player.RotateCarryObject();
+        }
+
+            // Drop logic
+        if (carryJoint != null)
+        {
+            Destroy(carryJoint); // Remove the joint
+        }
+
+
+        rb.useGravity = true;
+
+        player.SetIsCarrying(false);
+        isCarried = false;
+        gameObject.layer = LayerMask.NameToLayer("Default");
+
+        player.carriedObject = null;
+    }
+
+    private void PickUp(Player player)
+    {
         // Pick up logic
         this.player = player;
         isCarried = true;
@@ -55,23 +78,46 @@ public class CarryInteractable : Interactable
 
         gameObject.layer = LayerMask.NameToLayer("Carry");
 
-        // Initialize the carry joint
         carryJoint = gameObject.AddComponent<FixedJoint>();
         carryJoint.connectedBody = player.carryPoint.GetComponent<Rigidbody>();
 
         carryJoint.breakForce = Mathf.Infinity;
         carryJoint.breakTorque = Mathf.Infinity;
 
+        this.player.carriedObject = this.gameObject;
     }
 
-
-    public void RotateCarryObject(Vector2 lookInput)
+    public void EnableFixedJoint()
     {
-        if (!player.isRotatingCarryObject) return;
+        if (carryJoint == null)
+        {
+            carryJoint = gameObject.AddComponent<FixedJoint>();
+            carryJoint.connectedBody = player.carryPoint.GetComponent<Rigidbody>();
 
-        lookInput = lookInput.normalized; // Normalize the input to prevent speed increase with larger input values
+            carryJoint.breakForce = Mathf.Infinity;
+            carryJoint.breakTorque = Mathf.Infinity;
 
-        Vector3 rotation = new Vector3(lookInput.y, lookInput.x, 0);
-        transform.rotation *= Quaternion.Euler(rotation);
+            player.carriedObject = this.gameObject;
+        }
+    }
+
+    public void DisableFixedJoint()
+    {
+        if (carryJoint != null)
+        {
+            carryJoint.enableCollision = true;
+            Destroy(carryJoint);
+            carryJoint = null;
+        }
+    }
+
+    public void RotateObject(InputAction.CallbackContext context)
+    {
+        if (context.performed && isCarried)
+        {
+            Vector2 rotationInput = context.ReadValue<Vector2>().normalized;
+            Quaternion deltaRotation = Quaternion.Euler(rotationInput.y * rotationSpeed, rotationInput.x * rotationSpeed, 0f);
+            rb.MoveRotation(rb.rotation * deltaRotation);
+        }
     }
 }
