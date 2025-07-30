@@ -20,6 +20,8 @@ public class Inventory : MonoBehaviour
 
     private Player player;
 
+    [SerializeField] private PlayerInventorySO playerInventorySO;
+
     public void Awake()
     {
         actions = new InventoryAction();
@@ -38,6 +40,17 @@ public class Inventory : MonoBehaviour
         itemNameText = itemNameTransform != null ? itemNameTransform.GetComponent<TextMeshProUGUI>() : null;
         inventoryUI.SetActive(false);
         player = FindAnyObjectByType<Player>();
+
+        // Load info from PlayerInventorySO
+        if (playerInventorySO != null)
+        {
+            items = playerInventorySO.items;
+            currentItemIndex = playerInventorySO.currentItemIndex;
+        }
+        else
+        {
+            Debug.LogError("PlayerInventorySO not found in Resources");
+        }
     }
 
     public void OnEnable()
@@ -127,6 +140,7 @@ public class Inventory : MonoBehaviour
     {
         if (items.Count == 0 || !isInventoryOpen) return; // No items to cycle through
         currentItemIndex = (currentItemIndex + 1) % items.Count;
+        playerInventorySO.currentItemIndex = currentItemIndex; // Update the current item index in the SO
         itemNameText.text = items[currentItemIndex].itemName; // Update the item name text
         Debug.Log("Next item selected: " + items[currentItemIndex].itemName);
     }
@@ -135,6 +149,7 @@ public class Inventory : MonoBehaviour
     {
         if (items.Count == 0 || !isInventoryOpen) return; // No items to cycle through
         currentItemIndex = (currentItemIndex - 1 + items.Count) % items.Count;
+        playerInventorySO.currentItemIndex = currentItemIndex; // Update the current item index in the SO
         itemNameText.text = items[currentItemIndex].itemName; // Update the item name text
         Debug.Log("Previous item selected: " + items[currentItemIndex].itemName);
     }
@@ -144,7 +159,16 @@ public class Inventory : MonoBehaviour
         // Logic to add item to the inventory
         Debug.Log("Item added: " + itemName + " with key: " + itemKey);
         items.Add(new Item(itemName, itemKey));
-        // Here you would typically add the item to a list or dictionary
+        // Add to Inventory ScriptableObject
+        if (playerInventorySO != null)
+        {
+            playerInventorySO.items = items;
+            playerInventorySO.currentItemIndex = currentItemIndex;
+        }
+        else
+        {
+            Debug.LogWarning("PlayerInventorySO is null, cannot update inventory SO.");
+        }
     }
 
     public void RemoveItem()
