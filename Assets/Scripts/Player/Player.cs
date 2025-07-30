@@ -57,19 +57,6 @@ public class Player : MonoBehaviour
         }
     }
 
-    public void SetIsRotatingCarryObject(bool result)
-    {
-        ToggleRotation = result;
-        if (result)
-        {
-            PlayerState.instance.TriggerTransition(PlayerStateType.RotatingCarryObject);
-        }
-        else
-        {
-            PlayerState.instance.TriggerTransition(PlayerStateType.Idle);
-        }
-    }
-
     public RaycastHit GetRaycastHit()
     {
         return hit;
@@ -120,79 +107,6 @@ public class Player : MonoBehaviour
         //playerInput.actions["Scroll"].performed += inventory.CycleItems;
 
         playerInput.actions["Interact"].performed += ctx => OnInteract();
-        playerInput.actions["RotateCarryObject"].performed += ctx => ToggleCarryRotation();
-    }
-
-    public void ToggleCarryRotation()
-    {
-        if (PlayerState.instance.currentState == PlayerStateType.CarryingObject
-            || PlayerState.instance.currentState == PlayerStateType.RotatingCarryObject)
-        {
-            ToggleRotation = !ToggleRotation;
-            PlayerState.instance.TriggerTransition(ToggleRotation ? PlayerStateType.RotatingCarryObject : PlayerStateType.CarryingObject);
-            OnToggleCarryRotation();
-        }
-
-    }
-
-    private System.Action<InputAction.CallbackContext> rotateCarryObjectCallback;
-
-    public void OnToggleCarryRotation()
-    {
-        Debug.Log("Toggling Carry Rotation: " + ToggleRotation);
-
-        if (ToggleRotation)
-        {
-            // Unsubscribe from normal camera look
-            playerInput.actions["Look"].performed -= OnLook;
-
-            if (rotateCarryObjectCallback == null)
-            {
-                rotateCarryObjectCallback = ctx =>
-                {
-                    if (carriedObject != null)
-                    {
-                        carriedObject.GetComponent<CarryInteractable>().RotateCarryObject(ctx.ReadValue<Vector2>());
-                    }
-                };
-            }
-
-            // Assign callback for rotation input
-            if (hit.collider != null && hit.collider.gameObject.TryGetComponent(out CarryInteractable carryInteractable))
-            {
-                carriedObject = hit.collider.gameObject;
-                playerInput.actions["Look"].performed += rotateCarryObjectCallback;
-            }
-
-            // Freeze physics while rotating manually
-            var rb = carriedObject.GetComponent<Rigidbody>();
-            rb.isKinematic = true;
-
-            // Remove joint if it exists
-            var joint = carriedObject.GetComponent<FixedJoint>();
-            if (joint != null) Destroy(joint);
-        }
-        else
-        {
-            Debug.Log("Re-enabling carry mode with physics follow");
-
-            // Remove rotation callback and resume camera control
-            playerInput.actions["Look"].performed -= rotateCarryObjectCallback;
-            playerInput.actions["Look"].performed += OnLook;
-
-            var rb = carriedObject.GetComponent<Rigidbody>();
-            rb.isKinematic = false;
-
-            // Re-add joint to make object follow the carryPoint
-            var joint = carriedObject.AddComponent<FixedJoint>();
-            joint.connectedBody = carryPoint.GetComponent<Rigidbody>();
-            joint.breakForce = Mathf.Infinity;
-            joint.breakTorque = Mathf.Infinity;
-            joint.enablePreprocessing = false;
-        }
-
-        // If not carrying, just reset look
-        
     }
 
 

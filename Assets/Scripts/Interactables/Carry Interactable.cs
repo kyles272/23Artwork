@@ -46,7 +46,6 @@ public class CarryInteractable : Interactable
 
             rb.useGravity = true;
 
-            player.SetIsRotatingCarryObject(false);
             player.SetIsCarrying(false);
             isCarried = false;
             gameObject.layer = LayerMask.NameToLayer("Default");
@@ -69,16 +68,5 @@ public class CarryInteractable : Interactable
         carryJoint.breakForce = Mathf.Infinity;
         carryJoint.breakTorque = Mathf.Infinity;
 
-    }
-
-
-    public void RotateCarryObject(Vector2 lookInput)
-    {
-        if (!player.ToggleRotation) return;
-
-        lookInput = lookInput.normalized; // Normalize the input to prevent speed increase with larger input values
-
-        Vector3 rotation = new Vector3(lookInput.y, lookInput.x, 0);
-        transform.rotation *= Quaternion.Euler(rotation);
     }
 }
